@@ -1,47 +1,54 @@
 /* ============================================================
-   Movimiento y Fuerzas — Cinemática Interactiva
+   Magnetismo — Campos Magnéticos Interactivos
    ============================================================ */
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { Magnet } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import Breadcrumb from "@/components/Breadcrumb";
-import { MovementVisualizerAdvanced } from "@/components/MovementVisualizerAdvanced";
+import { MagneticFieldVisualizer } from "@/components/MagneticFieldVisualizer";
 
 const conceptos = [
   {
-    titulo: "Posición y Desplazamiento",
-    contenido: "La posición indica dónde está un objeto. El desplazamiento es el cambio de posición: Δx = xf − xi. Es una magnitud vectorial (tiene módulo y dirección).",
-    formula: "Δx = xf − xi",
-    color: "#00f5d4",
+    titulo: "Campo Magnético (B)",
+    formula: "B [T — Tesla]",
+    desc: "Región del espacio donde se ejerce fuerza magnética sobre cargas en movimiento. Su dirección se representa con líneas de fuerza.",
+    color: "#7209b7",
   },
   {
-    titulo: "Velocidad Media",
-    contenido: "Relación entre el desplazamiento y el tiempo transcurrido. La velocidad instantánea es la velocidad en un instante específico.",
-    formula: "v = Δx / Δt",
+    titulo: "Fuerza de Lorentz",
+    formula: "F = q · v × B",
+    desc: "Fuerza que ejerce un campo magnético sobre una carga q moviéndose a velocidad v. Es perpendicular a v y a B (producto vectorial).",
     color: "#4361ee",
   },
   {
-    titulo: "Aceleración",
-    contenido: "Razón de cambio de la velocidad respecto al tiempo. Si la aceleración es constante, el movimiento es uniformemente acelerado (MRUA).",
-    formula: "a = Δv / Δt",
+    titulo: "Regla de la Mano Derecha",
+    formula: "F = I · L × B",
+    desc: "Herramienta mnemotécnica para determinar la dirección de la fuerza magnética. Dedos apuntan en dirección de v (o I), se doblan hacia B, y el pulgar da F.",
     color: "#f72585",
   },
   {
-    titulo: "Ecuaciones del MRUA",
-    contenido: "Para movimiento uniformemente acelerado con condiciones iniciales x₀ y v₀:",
-    formula: "x = x₀ + v₀·t + ½·a·t²   |   v = v₀ + a·t   |   v² = v₀² + 2a·Δx",
-    color: "#ffd60a",
+    titulo: "Electromagnetismo",
+    formula: "B = μ₀ · n · I",
+    desc: "Una corriente eléctrica produce un campo magnético (Oersted, 1820). Un solenoide de n vueltas/metro con corriente I produce un campo uniforme interior.",
+    color: "#00f5d4",
   },
 ];
 
-export default function FisicaMovimiento() {
-  const [velocity, setVelocity] = useState(20);
-  const [acceleration, setAcceleration] = useState(2);
-  const [isRunning, setIsRunning] = useState(false);
+const aplicaciones = [
+  { emoji: "🧭", titulo: "Brújula", desc: "El campo magnético terrestre orienta la aguja hacia el polo norte magnético." },
+  { emoji: "🔊", titulo: "Altavoces", desc: "Un electroimán que varía genera movimiento en la membrana del altavoz." },
+  { emoji: "🏥", titulo: "Resonancia Magnética (MRI)", desc: "Campos muy intensos alinean protones del cuerpo para obtener imágenes médicas." },
+  { emoji: "⚡", titulo: "Generadores", desc: "La variación del campo magnético induce corriente eléctrica (Faraday)." },
+  { emoji: "🚄", titulo: "Tren Maglev", desc: "Levitación magnética por repulsión de campos superconductores." },
+  { emoji: "💻", titulo: "Disco Duro (HDD)", desc: "Los datos se almacenan como zonas magnetizadas en una superficie giratoria." },
+];
 
-  const currentCurrent = velocity + acceleration; // simplified display
+export default function FisicaMagnetismo() {
+  const [magnetStrength, setMagnetStrength] = useState(1);
+  const [fieldType, setFieldType] = useState<"dipole" | "solenoid">("dipole");
 
   return (
     <div className="min-h-screen" style={{ background: "#050914" }}>
@@ -53,21 +60,21 @@ export default function FisicaMovimiento() {
             crumbs={[
               { href: "/", label: "Inicio" },
               { href: "/fisica", label: "Física" },
-              { label: "Movimiento y Fuerzas" },
+              { label: "Magnetismo" },
             ]}
           />
 
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ background: "rgba(0, 245, 212, 0.1)", border: "1px solid rgba(0, 245, 212, 0.3)" }}>
-              <Rocket size={24} style={{ color: "#00f5d4" }} />
+              style={{ background: "rgba(114, 9, 183, 0.1)", border: "1px solid rgba(114, 9, 183, 0.3)" }}>
+              <Magnet size={24} style={{ color: "#7209b7" }} />
             </div>
             <div>
-              <p className="text-xs font-medium" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
-                // movimiento y fuerzas
+              <p className="text-xs font-medium" style={{ color: "rgba(114, 9, 183, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+                // magnetismo
               </p>
               <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                Cinemática Interactiva
+                Campos Magnéticos
               </h1>
             </div>
           </div>
@@ -77,50 +84,37 @@ export default function FisicaMovimiento() {
             <div className="lg:col-span-2">
               <div className="cyber-card rounded-xl p-6 mb-6">
                 <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Visualización del Movimiento
+                  Visualización de Campos Magnéticos
                 </h3>
-                <MovementVisualizerAdvanced
-                  initialVelocity={velocity}
-                  acceleration={acceleration}
-                  isRunning={isRunning}
+                <MagneticFieldVisualizer
+                  magnetStrength={magnetStrength}
+                  fieldType={fieldType}
                 />
               </div>
 
-              {/* Fórmulas */}
-              <div className="cyber-card rounded-xl p-6 mb-6">
-                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Ecuación de Movimiento
-                </h3>
-                <div className="p-4 rounded-lg mb-3" style={{ background: "rgba(0, 245, 212, 0.05)", border: "1px solid rgba(0, 245, 212, 0.15)" }}>
-                  <p className="text-base mb-1" style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>
-                    x = x₀ + v₀·t + ½·a·t²
-                  </p>
-                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
-                    v = v₀ + a·t
-                  </p>
-                </div>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  x: posición final (m) · v₀: velocidad inicial (m/s) · a: aceleración (m/s²) · t: tiempo (s)
-                </p>
-              </div>
-
-              {/* Con los valores actuales */}
               <div className="cyber-card rounded-xl p-6">
                 <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Valores Actuales
+                  Diferencia entre Imán y Solenoide
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { label: "Velocidad inicial", value: `${velocity.toFixed(1)} m/s`, color: "#00f5d4" },
-                    { label: "Aceleración", value: `${acceleration.toFixed(1)} m/s²`, color: "#f72585" },
-                    { label: "v en t=5s", value: `${(velocity + acceleration * 5).toFixed(1)} m/s`, color: "#4361ee" },
-                    { label: "x en t=5s", value: `${(velocity * 5 + 0.5 * acceleration * 25).toFixed(1)} m`, color: "#ffd60a" },
-                  ].map((item) => (
-                    <div key={item.label} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-                      <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>{item.label}</p>
-                      <p className="text-lg font-bold" style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</p>
-                    </div>
-                  ))}
+                  <div className="p-4 rounded-lg" style={{ background: "rgba(114, 9, 183, 0.07)", border: "1px solid rgba(114, 9, 183, 0.2)" }}>
+                    <p className="text-sm font-bold text-white mb-2">🧲 Imán Permanente</p>
+                    <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      <li>• Campo dipolar permanente</li>
+                      <li>• No requiere electricidad</li>
+                      <li>• Polos N y S inseparables</li>
+                      <li>• Campo más intenso en los polos</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 rounded-lg" style={{ background: "rgba(0, 245, 212, 0.07)", border: "1px solid rgba(0, 245, 212, 0.2)" }}>
+                    <p className="text-sm font-bold text-white mb-2">⚙️ Solenoide (Electroimán)</p>
+                    <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      <li>• Campo solo con corriente activa</li>
+                      <li>• Intensidad controlable (I)</li>
+                      <li>• Campo uniforme en el interior</li>
+                      <li>• Polaridad reversible</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
@@ -134,103 +128,85 @@ export default function FisicaMovimiento() {
 
                 <div className="mb-6">
                   <label className="text-sm font-medium text-white mb-2 block">
-                    Velocidad Inicial: <span style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>{velocity.toFixed(1)} m/s</span>
+                    Intensidad: <span style={{ color: "#7209b7", fontFamily: "'JetBrains Mono', monospace" }}>{magnetStrength.toFixed(1)} T</span>
                   </label>
                   <Slider
-                    value={[velocity]}
-                    onValueChange={(v) => { setVelocity(v[0]); setIsRunning(false); }}
-                    min={-50}
-                    max={50}
-                    step={1}
+                    value={[magnetStrength]}
+                    onValueChange={(m) => setMagnetStrength(m[0])}
+                    min={0.1}
+                    max={5}
+                    step={0.1}
                     className="w-full"
                   />
                   <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    <span>-50</span><span>0</span><span>50</span>
+                    <span>débil</span><span>fuerte</span>
                   </div>
                 </div>
 
                 <div className="mb-6">
-                  <label className="text-sm font-medium text-white mb-2 block">
-                    Aceleración: <span style={{ color: "#f72585", fontFamily: "'JetBrains Mono', monospace" }}>{acceleration.toFixed(1)} m/s²</span>
-                  </label>
-                  <Slider
-                    value={[acceleration]}
-                    onValueChange={(a) => { setAcceleration(a[0]); setIsRunning(false); }}
-                    min={-10}
-                    max={10}
-                    step={0.5}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
-                    <span>-10</span><span>0</span><span>+10</span>
-                  </div>
+                  <label className="text-sm font-medium text-white mb-3 block">Tipo de Campo:</label>
+                  <Tabs value={fieldType} onValueChange={(v) => setFieldType(v as "dipole" | "solenoid")}>
+                    <TabsList className="w-full">
+                      <TabsTrigger value="dipole" className="flex-1">🧲 Imán</TabsTrigger>
+                      <TabsTrigger value="solenoid" className="flex-1">⚙️ Bobina</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
                 </div>
 
-                <button
-                  onClick={() => setIsRunning(!isRunning)}
-                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all"
-                  style={{
-                    background: isRunning ? "rgba(247, 37, 133, 0.15)" : "rgba(0, 245, 212, 0.15)",
-                    border: `1px solid ${isRunning ? "rgba(247, 37, 133, 0.4)" : "rgba(0, 245, 212, 0.4)"}`,
-                    color: isRunning ? "#f72585" : "#00f5d4",
-                    fontFamily: "'Space Grotesk', sans-serif",
-                  }}
-                >
-                  {isRunning ? "⏹ Detener" : "▶ Iniciar"}
-                </button>
-
-                <div className="mt-4 p-4 rounded-lg" style={{ background: "rgba(0, 245, 212, 0.05)", border: "1px solid rgba(0, 245, 212, 0.1)" }}>
-                  <p className="text-xs font-medium text-white mb-2">💡 Experimenta:</p>
-                  <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.6)" }}>
-                    <li>• v₀ positiva + a positiva → acelera</li>
-                    <li>• v₀ positiva + a negativa → frena</li>
-                    <li>• v₀ = 0 + a positiva → caída libre</li>
-                    <li>• a = 0 → movimiento uniforme (MRU)</li>
+                <div className="p-4 rounded-lg mb-4" style={{ background: "rgba(114, 9, 183, 0.05)", border: "1px solid rgba(114, 9, 183, 0.1)" }}>
+                  <p className="text-xs font-medium text-white mb-2">📏 Unidades:</p>
+                  <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.6)", fontFamily: "'JetBrains Mono', monospace" }}>
+                    <li>• B: Tesla (T)</li>
+                    <li>• μ₀ = 4π×10⁻⁷ T·m/A</li>
+                    <li>• Tierra ≈ 25–65 μT</li>
+                    <li>• MRI médico ≈ 1.5–3 T</li>
                   </ul>
                 </div>
-              </div>
 
-              {/* Leyes de Newton */}
-              <div className="cyber-card rounded-xl p-6">
-                <h3 className="text-base font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Leyes de Newton
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { n: "1ª", nombre: "Inercia", desc: "Un cuerpo en reposo o MRU permanece así salvo que actúe una fuerza neta." },
-                    { n: "2ª", nombre: "F = m·a", desc: "La fuerza neta es proporcional a la masa y la aceleración producida." },
-                    { n: "3ª", nombre: "Acción/Reacción", desc: "Por cada acción existe una reacción igual y de sentido contrario." },
-                  ].map((ley) => (
-                    <div key={ley.n} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <p className="text-xs font-bold mb-0.5" style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>
-                        {ley.n} Ley · {ley.nombre}
-                      </p>
-                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{ley.desc}</p>
-                    </div>
-                  ))}
+                <div className="p-4 rounded-lg" style={{ background: "rgba(0, 245, 212, 0.05)", border: "1px solid rgba(0, 245, 212, 0.1)" }}>
+                  <p className="text-xs font-medium text-white mb-2">💡 Recuerda:</p>
+                  <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.55)" }}>
+                    <li>• Líneas de campo van de N→S fuera del imán</li>
+                    <li>• Se cierran pasando por el interior (S→N)</li>
+                    <li>• Polos iguales se repelen, distintos atraen</li>
+                  </ul>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Conceptos clave */}
+          {/* Conceptos y Aplicaciones */}
           <div className="mt-16">
-            <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
-              // conceptos esenciales
+            <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: "rgba(114, 9, 183, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+              // fundamentos
             </p>
             <h2 className="text-2xl font-bold text-white mb-8" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Fundamentos de Cinemática
+              Conceptos Esenciales
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
               {conceptos.map((c) => (
                 <div key={c.titulo} className="cyber-card rounded-xl p-6">
-                  <h4 className="font-bold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", color: c.color }}>
-                    {c.titulo}
-                  </h4>
-                  <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.55)" }}>{c.contenido}</p>
-                  <div className="p-2 rounded text-xs" style={{ background: `${c.color}10`, color: c.color, fontFamily: "'JetBrains Mono', monospace" }}>
+                  <h4 className="font-bold mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif", color: c.color }}>{c.titulo}</h4>
+                  <div className="inline-block px-2 py-0.5 rounded text-xs mb-3" style={{ background: `${c.color}15`, color: c.color, fontFamily: "'JetBrains Mono', monospace" }}>
                     {c.formula}
                   </div>
+                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{c.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: "rgba(114, 9, 183, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+              // aplicaciones reales
+            </p>
+            <h2 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              El Magnetismo en tu Vida
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {aplicaciones.map((a) => (
+                <div key={a.titulo} className="cyber-card rounded-xl p-4">
+                  <div className="text-2xl mb-2">{a.emoji}</div>
+                  <h4 className="font-bold text-white text-sm mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{a.titulo}</h4>
+                  <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{a.desc}</p>
                 </div>
               ))}
             </div>

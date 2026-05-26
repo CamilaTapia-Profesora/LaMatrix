@@ -1,99 +1,123 @@
 /* ============================================================
-   useMicrophoneCapture — Microphone Input Capture
-   Captura de audio del micrófono para análisis en tiempo real
+   useAudioSynthesizer — Web Audio API
+   Síntesis de ondas sinusoidales en tiempo real
    ============================================================ */
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
+import * as React from "react";
 
-export function useMicrophoneCapture() {
+export function useAudioSynthesizer() {
   const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const [isActive, setIsActive] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [permission, setPermission] = useState<"granted" | "denied" | "prompt">("prompt");
+  const oscillatorRef = useRef<OscillatorNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
+  const isPlayingRef = useRef(false);
+  const [audioState, setAudioState] = React.useState<{ audioContext: AudioContext | null; gainNode: GainNode | null }>({
+    audioContext: null,
+    gainNode: null,
+  });
 
-  const initMicrophone = useCallback(async () => {
-    try {
-      setError(null);
+  const initAudio = useCallback(() => {
+    if (audioContextRef.current) return;
 
-      // Solicitar permiso del micrófono
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false,
-        },
-      });
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const gainNode = audioContext.createGain();
+    gainNode.connect(audioContext.destination);
+    gainNode.gain.value = 0; // Comienza silencioso
 
-      streamRef.current = stream;
-      setPermission("granted");
+    audioContextRef.current = audioContext;
+    gainNodeRef.current = gainNode;
+  }, []);
 
-      // Crear contexto de audio si no existe
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+  const start = useCallback(
+    (frequency: number = 440, amplitude: number = 0.3) => {
+      if (!audioContextRef.current) initAudio();
+      if (!audioContextRef.current || !gainNodeRef.current) return;
 
-      const audioContext = audioContextRef.current;
-
-      // Crear nodo fuente del micrófono
-      if (!sourceRef.current) {
-        sourceRef.current = audioContext.createMediaStreamSource(stream);
-      }
-
-      // Crear analizador
-      if (!analyserRef.current) {
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 2048;
-        analyser.smoothingTimeConstant = 0.85;
-        sourceRef.current.connect(analyser);
-        analyserRef.current = analyser;
-      }
-
-      setIsActive(true);
-    } catch (err) {
-      if (err instanceof DOMException) {
-        if (err.name === "NotAllowedError") {
-          setPermission("denied");
-          setError("Permiso de micrófono denegado. Por favor, habilita el acceso al micrófono en la configuración del navegador.");
-        } else if (err.name === "NotFoundError") {
-          setError("No se encontró micrófono en este dispositivo.");
-        } else {
-          setError(`Error al acceder al micrófono: ${err.message}`);
+      // Si ya está tocando, actualiza parámetros
+      if (isPlayingRef.current) {
+        if (oscillatorRef.current) {
+          oscillatorRef.current.frequency.setTargetAtTime(
+            frequency,
+            audioContextRef.current.currentTime,
+            0.01
+          );
         }
-      } else {
-        setError("Error desconocido al acceder al micrófono.");
+        gainNodeRef.current.gain.setTargetAtTime(
+          amplitude * 0.1,
+          audioContextRef.current.currentTime,
+          0.01
+        );
+        return;
       }
-      setIsActive(false);
-    }
+
+      // Crea nuevo oscilador
+      const oscillator = audioContextRef.current.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gainNodeRef.current);
+
+      gainNodeRef.current.gain.setValueAtTime(0, audioContextRef.current.currentTime);
+      gainNodeRef.current.gain.linearRampToValueAtTime(
+        amplitude * 0.1,
+        audioContextRef.current.currentTime + 0.05
+      );
+
+      oscillator.start(audioContextRef.current.currentTime);
+      oscillatorRef.current = oscillator;
+      isPlayingRef.current = true;
+    },
+    [initAudio]
+  );
+
+  const update = useCallback((frequency: number, amplitude: number) => {
+    if (!audioContextRef.current || !oscillatorRef.current || !gainNodeRef.current) return;
+
+    oscillatorRef.current.frequency.setTargetAtTime(
+      frequency,
+      audioContextRef.current.currentTime,
+      0.01
+    );
+    gainNodeRef.current.gain.setTargetAtTime(
+      amplitude * 0.1,
+      audioContextRef.current.currentTime,
+      0.01
+    );
   }, []);
 
   const stop = useCallback(() => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    setIsActive(false);
-  }, []);
+    if (!audioContextRef.current || !oscillatorRef.current || !gainNodeRef.current) return;
 
-  const getAnalyser = useCallback(() => {
-    return analyserRef.current;
+    gainNodeRef.current.gain.setTargetAtTime(0, audioContextRef.current.currentTime, 0.1);
+
+    setTimeout(() => {
+      if (oscillatorRef.current) {
+        oscillatorRef.current.stop(audioContextRef.current!.currentTime);
+        oscillatorRef.current = null;
+      }
+      isPlayingRef.current = false;
+    }, 100);
   }, []);
 
   useEffect(() => {
     return () => {
-      if (isActive) {
+      if (isPlayingRef.current) {
         stop();
       }
     };
-  }, [isActive, stop]);
+  }, [stop]);
+
+  useEffect(() => {
+    setAudioState({
+      audioContext: audioContextRef.current,
+      gainNode: gainNodeRef.current,
+    });
+  }, []);
 
   return {
-    initMicrophone,
+    start,
+    update,
     stop,
-    isActive,
-    error,
-    permission,
-    getAnalyser,
+    isPlaying: isPlayingRef.current,
+    audioContext: audioContextRef.current,
+    gainNode: gainNodeRef.current,
   };
 }

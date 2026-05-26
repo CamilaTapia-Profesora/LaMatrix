@@ -1,144 +1,122 @@
 /* ============================================================
-   MovementVisualizer — Cinemática Interactiva
-   Visualización de movimiento, velocidad y aceleración
+   Footer — Cyberpunk Académico
    ============================================================ */
-import { useEffect, useRef, useCallback } from "react";
+import { Link } from "wouter";
+import { Zap, BookOpen, Compass, MapPin, Mail } from "lucide-react";
 
-interface MovementVisualizerProps {
-  initialVelocity: number;
-  acceleration: number;
-  isRunning: boolean;
-}
+const temasPhysics = [
+  { href: "/fisica/movimiento", label: "Movimiento y Fuerzas" },
+  { href: "/fisica/energia", label: "Energía y Trabajo" },
+  { href: "/fisica/primero-medio", label: "Ondas y Sonido" },
+  { href: "/fisica/electricidad", label: "Electricidad" },
+  { href: "/fisica/magnetismo", label: "Magnetismo" },
+  { href: "/fisica/optica", label: "Óptica" },
+];
 
-export function MovementVisualizer({ initialVelocity, acceleration, isRunning }: MovementVisualizerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animRef = useRef<number>(0);
-  const timeRef = useRef(0);
-  const positionRef = useRef(50);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Fondo
-    ctx.fillStyle = "#030b18";
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid
-    ctx.strokeStyle = "rgba(0, 245, 212, 0.06)";
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= W; x += W / 10) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-
-    // Línea de referencia (carril)
-    ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, H / 2);
-    ctx.lineTo(W, H / 2);
-    ctx.stroke();
-
-    if (isRunning) {
-      timeRef.current += 0.016; // ~60fps
-      // Ecuación: x = x0 + v*t + 0.5*a*t²
-      const displacement = initialVelocity * timeRef.current + 0.5 * acceleration * timeRef.current * timeRef.current;
-      positionRef.current = Math.max(0, Math.min(W - 30, 50 + displacement / 10));
-
-      // Reset si sale del canvas
-      if (positionRef.current >= W - 30 || positionRef.current <= 0) {
-        timeRef.current = 0;
-        positionRef.current = 50;
-      }
-    }
-
-    // Objeto (círculo)
-    ctx.fillStyle = "#00f5d4";
-    ctx.shadowBlur = 12;
-    ctx.shadowColor = "#00f5d4";
-    ctx.beginPath();
-    ctx.arc(positionRef.current, H / 2, 12, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-
-    // Vector de velocidad
-    const velocity = initialVelocity + acceleration * timeRef.current;
-    const arrowLength = Math.min(80, Math.abs(velocity) * 5);
-    const arrowColor = velocity > 0 ? "#4361ee" : "#f72585";
-
-    ctx.strokeStyle = arrowColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(positionRef.current, H / 2 - 30);
-    ctx.lineTo(positionRef.current + (velocity > 0 ? arrowLength : -arrowLength), H / 2 - 30);
-    ctx.stroke();
-
-    // Punta de flecha
-    const headlen = 8;
-    const angle = velocity > 0 ? 0 : Math.PI;
-    ctx.beginPath();
-    ctx.moveTo(positionRef.current + (velocity > 0 ? arrowLength : -arrowLength), H / 2 - 30);
-    ctx.lineTo(
-      positionRef.current + (velocity > 0 ? arrowLength : -arrowLength) - headlen * Math.cos(angle - Math.PI / 6),
-      H / 2 - 30 - headlen * Math.sin(angle - Math.PI / 6)
-    );
-    ctx.moveTo(positionRef.current + (velocity > 0 ? arrowLength : -arrowLength), H / 2 - 30);
-    ctx.lineTo(
-      positionRef.current + (velocity > 0 ? arrowLength : -arrowLength) - headlen * Math.cos(angle + Math.PI / 6),
-      H / 2 - 30 - headlen * Math.sin(angle + Math.PI / 6)
-    );
-    ctx.stroke();
-
-    // Info
-    ctx.font = "12px 'JetBrains Mono', monospace";
-    ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
-    ctx.textAlign = "left";
-    ctx.fillText(`t: ${timeRef.current.toFixed(2)}s`, 10, 20);
-    ctx.fillText(`v: ${velocity.toFixed(1)} m/s`, 10, 40);
-    ctx.fillText(`x: ${(50 + positionRef.current).toFixed(1)} m`, 10, 60);
-
-    animRef.current = requestAnimationFrame(draw);
-  }, [initialVelocity, acceleration, isRunning]);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-
-    resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-
-    animRef.current = requestAnimationFrame(draw);
-
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      observer.disconnect();
-    };
-  }, [draw]);
+export default function Footer() {
+  const year = new Date().getFullYear();
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full rounded-lg"
+    <footer
+      className="mt-24 border-t"
       style={{
-        height: "200px",
-        background: "#030b18",
-        border: "1px solid rgba(0, 245, 212, 0.15)",
-        display: "block",
+        background: "rgba(5, 9, 20, 0.95)",
+        borderColor: "rgba(0, 245, 212, 0.1)",
       }}
-    />
+    >
+      <div className="container py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+          {/* Brand */}
+          <div className="md:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div
+                className="w-8 h-8 rounded flex items-center justify-center"
+                style={{ background: "rgba(0, 245, 212, 0.1)", border: "1px solid rgba(0, 245, 212, 0.3)" }}
+              >
+                <Zap size={16} style={{ color: "#00f5d4" }} />
+              </div>
+              <span className="font-bold text-lg" style={{ color: "#00f5d4", fontFamily: "'Space Grotesk', sans-serif" }}>
+                La Matriz
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+              Portal académico interactivo del Liceo Emblemático O'Higgins.
+            </p>
+            <p className="text-sm" style={{ color: "rgba(0, 245, 212, 0.6)", fontFamily: "'JetBrains Mono', monospace" }}>
+              Prof. Camila Tapia Cisternas
+            </p>
+            <div className="flex items-center gap-1.5 mt-2 text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              <MapPin size={11} />
+              <span>Iquique, Chile</span>
+            </div>
+          </div>
+
+          {/* Materias */}
+          <div>
+            <h4 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Módulos
+            </h4>
+            <div className="flex flex-col gap-2">
+              <Link href="/fisica">
+                <span className="flex items-center gap-2 text-sm transition-colors duration-200 hover:text-white"
+                  style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <BookOpen size={14} style={{ color: "#00f5d4" }} /> Física
+                </span>
+              </Link>
+              <Link href="/orientacion">
+                <span className="flex items-center gap-2 text-sm transition-colors duration-200 hover:text-white"
+                  style={{ color: "rgba(255,255,255,0.55)" }}>
+                  <Compass size={14} style={{ color: "#f72585" }} /> Orientación
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Temas de Física */}
+          <div>
+            <h4 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Temas Física
+            </h4>
+            <div className="flex flex-col gap-1.5">
+              {temasPhysics.map((t) => (
+                <Link key={t.href} href={t.href}>
+                  <span className="text-xs transition-colors duration-200 hover:text-white"
+                    style={{ color: "rgba(255,255,255,0.4)" }}>
+                    {t.label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+          {/* Establecimiento */}
+          <div>
+            <h4 className="text-sm font-semibold mb-4 uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.4)" }}>
+              Establecimiento
+            </h4>
+            <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.45)" }}>
+              Liceo Emblemático Libertador General Bernardo O'Higgins Riquelme
+            </p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Departamento de Ciencias y Tecnología
+            </p>
+            <div className="mt-4 flex items-center gap-2 text-xs" style={{ color: "rgba(0, 245, 212, 0.4)" }}>
+              <Mail size={11} />
+              <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>Iquique · Tarapacá · Chile</span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className="mt-10 pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-xs"
+          style={{ borderTop: "1px solid rgba(0, 245, 212, 0.08)", color: "rgba(255,255,255,0.25)" }}
+        >
+          <span>© {year} La Matriz · Liceo O'Higgins. Todos los derechos reservados.</span>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", color: "rgba(0, 245, 212, 0.3)" }}>
+            v1.0.0 · Hecho con ❤️ para las ciencias
+          </span>
+        </div>
+      </div>
+    </footer>
   );
 }

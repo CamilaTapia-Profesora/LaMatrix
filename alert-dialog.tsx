@@ -1,40 +1,22 @@
+import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-function Empty({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="empty"
-      className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-6 rounded-lg border-dashed p-6 text-center text-balance md:p-12",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="empty-header"
-      className={cn(
-        "flex max-w-sm flex-col items-center gap-2 text-center",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-const emptyMediaVariants = cva(
-  "flex shrink-0 items-center justify-center mb-2 [&_svg]:pointer-events-none [&_svg]:shrink-0",
+const badgeVariants = cva(
+  "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden",
   {
     variants: {
       variant: {
-        default: "bg-transparent",
-        icon: "bg-muted text-foreground flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg:not([class*='size-'])]:size-6",
+        default:
+          "border-transparent bg-primary text-primary-foreground [a&]:hover:bg-primary/90",
+        secondary:
+          "border-transparent bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/90",
+        destructive:
+          "border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        outline:
+          "text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground",
       },
     },
     defaultVariants: {
@@ -43,62 +25,22 @@ const emptyMediaVariants = cva(
   }
 );
 
-function EmptyMedia({
+function Badge({
   className,
-  variant = "default",
+  variant,
+  asChild = false,
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof emptyMediaVariants>) {
+}: React.ComponentProps<"span"> &
+  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "span";
+
   return (
-    <div
-      data-slot="empty-icon"
-      data-variant={variant}
-      className={cn(emptyMediaVariants({ variant, className }))}
+    <Comp
+      data-slot="badge"
+      className={cn(badgeVariants({ variant }), className)}
       {...props}
     />
   );
 }
 
-function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="empty-title"
-      className={cn("text-lg font-medium tracking-tight", className)}
-      {...props}
-    />
-  );
-}
-
-function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
-  return (
-    <div
-      data-slot="empty-description"
-      className={cn(
-        "text-muted-foreground [&>a:hover]:text-primary text-sm/relaxed [&>a]:underline [&>a]:underline-offset-4",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function EmptyContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="empty-content"
-      className={cn(
-        "flex w-full max-w-sm min-w-0 flex-col items-center gap-4 text-sm text-balance",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-export {
-  Empty,
-  EmptyHeader,
-  EmptyTitle,
-  EmptyDescription,
-  EmptyContent,
-  EmptyMedia,
-};
+export { Badge, badgeVariants };

@@ -1,438 +1,238 @@
 /* ============================================================
-   Home — Cyberpunk Académico
-   Hero con imagen de fondo, typewriter effect, cards de materias
-   Liceo O'Higgins · Prof. Camila Tapia Cisternas
+   Movimiento y Fuerzas — Cinemática Interactiva
    ============================================================ */
-import { useEffect, useRef, useState } from "react";
-import { Link } from "wouter";
-import { Atom, Compass, ChevronRight, Zap, BookOpen, Star } from "lucide-react";
+import { useState } from "react";
+import { Rocket } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import Breadcrumb from "@/components/Breadcrumb";
+import { MovementVisualizerAdvanced } from "@/components/MovementVisualizerAdvanced";
 
-const HERO_BG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663697524320/aBTgoW33keowB2hYSBvTXc/hero-bg-cYfYNpGZPSSkUqFPCgtNdh.webp";
-
-const TYPEWRITER_TEXTS = [
-  "Explora la Física del universo",
-  "Descubre tu potencial",
-  "Aprende con tecnología",
-  "Ciencia + Orientación",
-];
-
-function useTypewriter(texts: string[], speed = 60, pause = 2000) {
-  const [display, setDisplay] = useState("");
-  const [idx, setIdx] = useState(0);
-  const [charIdx, setCharIdx] = useState(0);
-  const [deleting, setDeleting] = useState(false);
-
-  useEffect(() => {
-    const current = texts[idx];
-    let timeout: ReturnType<typeof setTimeout>;
-
-    if (!deleting && charIdx < current.length) {
-      timeout = setTimeout(() => setCharIdx((c) => c + 1), speed);
-    } else if (!deleting && charIdx === current.length) {
-      timeout = setTimeout(() => setDeleting(true), pause);
-    } else if (deleting && charIdx > 0) {
-      timeout = setTimeout(() => setCharIdx((c) => c - 1), speed / 2);
-    } else if (deleting && charIdx === 0) {
-      setDeleting(false);
-      setIdx((i) => (i + 1) % texts.length);
-    }
-
-    setDisplay(current.slice(0, charIdx));
-    return () => clearTimeout(timeout);
-  }, [charIdx, deleting, idx, texts, speed, pause]);
-
-  return display;
-}
-
-// Animated particle canvas
-function ParticleCanvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    let animId: number;
-    const particles: { x: number; y: number; vx: number; vy: number; r: number; alpha: number }[] = [];
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        r: Math.random() * 2 + 0.5,
-        alpha: Math.random() * 0.6 + 0.1,
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
-
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 245, 212, ${p.alpha})`;
-        ctx.fill();
-      });
-
-      // Draw connections
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 245, 212, ${0.08 * (1 - dist / 120)})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
-        }
-      }
-
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{ opacity: 0.6 }}
-    />
-  );
-}
-
-const materias = [
+const conceptos = [
   {
-    href: "/fisica",
-    icon: Atom,
-    title: "Física",
-    subtitle: "Ciencias Naturales",
-    desc: "Ondas sonoras, escala de decibeles, osciloscopio interactivo y los principios fundamentales que rigen el universo.",
+    titulo: "Posición y Desplazamiento",
+    contenido: "La posición indica dónde está un objeto. El desplazamiento es el cambio de posición: Δx = xf − xi. Es una magnitud vectorial (tiene módulo y dirección).",
+    formula: "Δx = xf − xi",
     color: "#00f5d4",
-    glow: "rgba(0, 245, 212, 0.15)",
-    border: "rgba(0, 245, 212, 0.25)",
-    bg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663697524320/aBTgoW33keowB2hYSBvTXc/fisica-bg-oLaFxGErboDSxGiSwo3M64.webp",
-    badge: "Primero Medio",
   },
   {
-    href: "/orientacion",
-    icon: Compass,
-    title: "Orientación",
-    subtitle: "Desarrollo Personal",
-    desc: "Recursos para tu crecimiento académico y personal. Estrategias de estudio, bienestar emocional y orientación vocacional.",
+    titulo: "Velocidad Media",
+    contenido: "Relación entre el desplazamiento y el tiempo transcurrido. La velocidad instantánea es la velocidad en un instante específico.",
+    formula: "v = Δx / Δt",
+    color: "#4361ee",
+  },
+  {
+    titulo: "Aceleración",
+    contenido: "Razón de cambio de la velocidad respecto al tiempo. Si la aceleración es constante, el movimiento es uniformemente acelerado (MRUA).",
+    formula: "a = Δv / Δt",
     color: "#f72585",
-    glow: "rgba(247, 37, 133, 0.15)",
-    border: "rgba(247, 37, 133, 0.25)",
-    bg: "https://d2xsxph8kpxj0f.cloudfront.net/310519663697524320/aBTgoW33keowB2hYSBvTXc/orientacion-bg-SBwp8aCm5mU6J2HJPXGaYK.webp",
-    badge: "Todos los cursos",
+  },
+  {
+    titulo: "Ecuaciones del MRUA",
+    contenido: "Para movimiento uniformemente acelerado con condiciones iniciales x₀ y v₀:",
+    formula: "x = x₀ + v₀·t + ½·a·t²   |   v = v₀ + a·t   |   v² = v₀² + 2a·Δx",
+    color: "#ffd60a",
   },
 ];
 
-const stats = [
-  { value: "2", label: "Materias", icon: BookOpen },
-  { value: "∞", label: "Recursos", icon: Star },
-  { value: "100%", label: "Interactivo", icon: Zap },
-];
+export default function FisicaMovimiento() {
+  const [velocity, setVelocity] = useState(20);
+  const [acceleration, setAcceleration] = useState(2);
+  const [isRunning, setIsRunning] = useState(false);
 
-export default function Home() {
-  const typed = useTypewriter(TYPEWRITER_TEXTS);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 100);
-    return () => clearTimeout(t);
-  }, []);
+  const currentCurrent = velocity + acceleration; // simplified display
 
   return (
     <div className="min-h-screen" style={{ background: "#050914" }}>
       <NavBar />
 
-      {/* ── HERO ── */}
-      <section
-        className="relative min-h-screen flex items-center overflow-hidden"
-        style={{ paddingTop: "64px" }}
-      >
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: `url(${HERO_BG})`,
-            filter: "brightness(0.35)",
-          }}
-        />
-        {/* Gradient overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: "linear-gradient(135deg, rgba(5,9,20,0.7) 0%, rgba(5,9,20,0.3) 50%, rgba(5,9,20,0.8) 100%)",
-          }}
-        />
-        {/* Particles */}
-        <ParticleCanvas />
+      <section className="py-16">
+        <div className="container">
+          <Breadcrumb
+            crumbs={[
+              { href: "/", label: "Inicio" },
+              { href: "/fisica", label: "Física" },
+              { label: "Movimiento y Fuerzas" },
+            ]}
+          />
 
-        {/* Content */}
-        <div className="container relative z-10 py-24">
-          <div className="max-w-3xl">
-            {/* Badge */}
-            <div
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-6 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-              style={{
-                background: "rgba(0, 245, 212, 0.08)",
-                border: "1px solid rgba(0, 245, 212, 0.25)",
-                color: "#00f5d4",
-                fontFamily: "'JetBrains Mono', monospace",
-                transitionDelay: "0ms",
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse-glow" />
-              Liceo Emblemático Libertador General Bernardo O'Higgins Riquelme
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center"
+              style={{ background: "rgba(0, 245, 212, 0.1)", border: "1px solid rgba(0, 245, 212, 0.3)" }}>
+              <Rocket size={24} style={{ color: "#00f5d4" }} />
             </div>
-
-            {/* Title */}
-            <h1
-              className={`text-5xl md:text-7xl font-black leading-none mb-4 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{
-                fontFamily: "'Space Grotesk', sans-serif",
-                transitionDelay: "100ms",
-              }}
-            >
-              <span className="gradient-text-cyan">La Matriz</span>
-            </h1>
-
-            {/* Typewriter */}
-            <div
-              className={`text-xl md:text-2xl font-medium mb-2 h-8 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{
-                color: "rgba(255,255,255,0.85)",
-                fontFamily: "'Space Grotesk', sans-serif",
-                transitionDelay: "200ms",
-              }}
-            >
-              {typed}
-              <span className="inline-block w-0.5 h-6 ml-1 align-middle animate-pulse" style={{ background: "#00f5d4" }} />
+            <div>
+              <p className="text-xs font-medium" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+                // movimiento y fuerzas
+              </p>
+              <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                Cinemática Interactiva
+              </h1>
             </div>
+          </div>
 
-            {/* Subtitle */}
-            <p
-              className={`text-base md:text-lg mb-8 max-w-xl leading-relaxed transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{
-                color: "rgba(255,255,255,0.5)",
-                transitionDelay: "300ms",
-              }}
-            >
-              Portal académico de la{" "}
-              <span style={{ color: "rgba(0, 245, 212, 0.8)" }}>Prof. Camila Tapia Cisternas</span>.
-              Física interactiva y orientación para tu desarrollo integral.
-            </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Visualizador */}
+            <div className="lg:col-span-2">
+              <div className="cyber-card rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Visualización del Movimiento
+                </h3>
+                <MovementVisualizerAdvanced
+                  initialVelocity={velocity}
+                  acceleration={acceleration}
+                  isRunning={isRunning}
+                />
+              </div>
 
-            {/* CTA buttons */}
-            <div
-              className={`flex flex-wrap gap-3 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{ transitionDelay: "400ms" }}
-            >
-              <Link href="/fisica">
-                <button
-                  className="btn-neon-cyan flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold"
-                >
-                  <Atom size={16} />
-                  Ir a Física
-                  <ChevronRight size={14} />
-                </button>
-              </Link>
-              <Link href="/orientacion">
-                <button
-                  className="btn-neon-magenta flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold"
-                >
-                  <Compass size={16} />
-                  Ir a Orientación
-                  <ChevronRight size={14} />
-                </button>
-              </Link>
-            </div>
+              {/* Fórmulas */}
+              <div className="cyber-card rounded-xl p-6 mb-6">
+                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Ecuación de Movimiento
+                </h3>
+                <div className="p-4 rounded-lg mb-3" style={{ background: "rgba(0, 245, 212, 0.05)", border: "1px solid rgba(0, 245, 212, 0.15)" }}>
+                  <p className="text-base mb-1" style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>
+                    x = x₀ + v₀·t + ½·a·t²
+                  </p>
+                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
+                    v = v₀ + a·t
+                  </p>
+                </div>
+                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                  x: posición final (m) · v₀: velocidad inicial (m/s) · a: aceleración (m/s²) · t: tiempo (s)
+                </p>
+              </div>
 
-            {/* Stats */}
-            <div
-              className={`flex gap-8 mt-12 transition-all duration-700 ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-              style={{ transitionDelay: "500ms" }}
-            >
-              {stats.map(({ value, label, icon: Icon }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <Icon size={16} style={{ color: "#00f5d4" }} />
-                  <div>
-                    <div className="text-lg font-bold leading-none" style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>
-                      {value}
+              {/* Con los valores actuales */}
+              <div className="cyber-card rounded-xl p-6">
+                <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Valores Actuales
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: "Velocidad inicial", value: `${velocity.toFixed(1)} m/s`, color: "#00f5d4" },
+                    { label: "Aceleración", value: `${acceleration.toFixed(1)} m/s²`, color: "#f72585" },
+                    { label: "v en t=5s", value: `${(velocity + acceleration * 5).toFixed(1)} m/s`, color: "#4361ee" },
+                    { label: "x en t=5s", value: `${(velocity * 5 + 0.5 * acceleration * 25).toFixed(1)} m`, color: "#ffd60a" },
+                  ].map((item) => (
+                    <div key={item.label} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <p className="text-xs mb-1" style={{ color: "rgba(255,255,255,0.4)" }}>{item.label}</p>
+                      <p className="text-lg font-bold" style={{ color: item.color, fontFamily: "'JetBrains Mono', monospace" }}>{item.value}</p>
                     </div>
-                    <div className="text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{label}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Controles */}
+            <div className="lg:col-span-1">
+              <div className="cyber-card rounded-xl p-6 sticky top-20 mb-6">
+                <h3 className="text-lg font-bold text-white mb-6" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Parámetros
+                </h3>
+
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-white mb-2 block">
+                    Velocidad Inicial: <span style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>{velocity.toFixed(1)} m/s</span>
+                  </label>
+                  <Slider
+                    value={[velocity]}
+                    onValueChange={(v) => { setVelocity(v[0]); setIsRunning(false); }}
+                    min={-50}
+                    max={50}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <span>-50</span><span>0</span><span>50</span>
+                  </div>
+                </div>
+
+                <div className="mb-6">
+                  <label className="text-sm font-medium text-white mb-2 block">
+                    Aceleración: <span style={{ color: "#f72585", fontFamily: "'JetBrains Mono', monospace" }}>{acceleration.toFixed(1)} m/s²</span>
+                  </label>
+                  <Slider
+                    value={[acceleration]}
+                    onValueChange={(a) => { setAcceleration(a[0]); setIsRunning(false); }}
+                    min={-10}
+                    max={10}
+                    step={0.5}
+                    className="w-full"
+                  />
+                  <div className="flex justify-between text-xs mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    <span>-10</span><span>0</span><span>+10</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsRunning(!isRunning)}
+                  className="w-full py-3 rounded-lg font-semibold text-sm transition-all"
+                  style={{
+                    background: isRunning ? "rgba(247, 37, 133, 0.15)" : "rgba(0, 245, 212, 0.15)",
+                    border: `1px solid ${isRunning ? "rgba(247, 37, 133, 0.4)" : "rgba(0, 245, 212, 0.4)"}`,
+                    color: isRunning ? "#f72585" : "#00f5d4",
+                    fontFamily: "'Space Grotesk', sans-serif",
+                  }}
+                >
+                  {isRunning ? "⏹ Detener" : "▶ Iniciar"}
+                </button>
+
+                <div className="mt-4 p-4 rounded-lg" style={{ background: "rgba(0, 245, 212, 0.05)", border: "1px solid rgba(0, 245, 212, 0.1)" }}>
+                  <p className="text-xs font-medium text-white mb-2">💡 Experimenta:</p>
+                  <ul className="text-xs space-y-1" style={{ color: "rgba(255,255,255,0.6)" }}>
+                    <li>• v₀ positiva + a positiva → acelera</li>
+                    <li>• v₀ positiva + a negativa → frena</li>
+                    <li>• v₀ = 0 + a positiva → caída libre</li>
+                    <li>• a = 0 → movimiento uniforme (MRU)</li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Leyes de Newton */}
+              <div className="cyber-card rounded-xl p-6">
+                <h3 className="text-base font-bold text-white mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                  Leyes de Newton
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { n: "1ª", nombre: "Inercia", desc: "Un cuerpo en reposo o MRU permanece así salvo que actúe una fuerza neta." },
+                    { n: "2ª", nombre: "F = m·a", desc: "La fuerza neta es proporcional a la masa y la aceleración producida." },
+                    { n: "3ª", nombre: "Acción/Reacción", desc: "Por cada acción existe una reacción igual y de sentido contrario." },
+                  ].map((ley) => (
+                    <div key={ley.n} className="p-3 rounded-lg" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <p className="text-xs font-bold mb-0.5" style={{ color: "#00f5d4", fontFamily: "'JetBrains Mono', monospace" }}>
+                        {ley.n} Ley · {ley.nombre}
+                      </p>
+                      <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>{ley.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Conceptos clave */}
+          <div className="mt-16">
+            <p className="text-xs font-medium uppercase tracking-widest mb-2" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
+              // conceptos esenciales
+            </p>
+            <h2 className="text-2xl font-bold text-white mb-8" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              Fundamentos de Cinemática
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {conceptos.map((c) => (
+                <div key={c.titulo} className="cyber-card rounded-xl p-6">
+                  <h4 className="font-bold text-white mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif", color: c.color }}>
+                    {c.titulo}
+                  </h4>
+                  <p className="text-sm mb-3" style={{ color: "rgba(255,255,255,0.55)" }}>{c.contenido}</p>
+                  <div className="p-2 rounded text-xs" style={{ background: `${c.color}10`, color: c.color, fontFamily: "'JetBrains Mono', monospace" }}>
+                    {c.formula}
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 animate-float">
-          <span className="text-xs" style={{ color: "rgba(0, 245, 212, 0.4)", fontFamily: "'JetBrains Mono', monospace" }}>scroll</span>
-          <div className="w-px h-8" style={{ background: "linear-gradient(to bottom, rgba(0,245,212,0.4), transparent)" }} />
-        </div>
-      </section>
-
-      {/* ── MATERIAS ── */}
-      <section className="py-24">
-        <div className="container">
-          <div className="text-center mb-16">
-            <p className="text-xs font-medium uppercase tracking-widest mb-3" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
-              // materias disponibles
-            </p>
-            <h2 className="text-4xl md:text-5xl font-black" style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#fff" }}>
-              Elige tu{" "}
-              <span className="gradient-text-cyan">módulo</span>
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {materias.map((m, i) => {
-              const Icon = m.icon;
-              return (
-                <Link key={m.href} href={m.href}>
-                  <div
-                    className="cyber-card rounded-2xl overflow-hidden group cursor-pointer animate-slide-up"
-                    style={{ animationDelay: `${i * 150}ms` }}
-                  >
-                    {/* Card image header */}
-                    <div
-                      className="relative h-48 overflow-hidden"
-                      style={{
-                        backgroundImage: `url(${m.bg})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    >
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: `linear-gradient(to bottom, rgba(5,9,20,0.2), rgba(5,9,20,0.85))` }}
-                      />
-                      <div className="absolute bottom-4 left-6 flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ background: `${m.glow}`, border: `1px solid ${m.border}` }}
-                        >
-                          <Icon size={20} style={{ color: m.color }} />
-                        </div>
-                        <div>
-                          <div className="text-xs font-medium" style={{ color: m.color, fontFamily: "'JetBrains Mono', monospace" }}>
-                            {m.subtitle}
-                          </div>
-                          <div className="text-xl font-bold text-white">{m.title}</div>
-                        </div>
-                      </div>
-                      {/* Badge */}
-                      <div
-                        className="absolute top-4 right-4 px-2 py-1 rounded text-xs font-medium"
-                        style={{ background: `${m.glow}`, border: `1px solid ${m.border}`, color: m.color, fontFamily: "'JetBrains Mono', monospace" }}
-                      >
-                        {m.badge}
-                      </div>
-                    </div>
-
-                    {/* Card body */}
-                    <div className="p-6">
-                      <p className="text-sm leading-relaxed mb-4" style={{ color: "rgba(255,255,255,0.55)" }}>
-                        {m.desc}
-                      </p>
-                      <div
-                        className="flex items-center gap-2 text-sm font-semibold transition-all duration-200 group-hover:gap-3"
-                        style={{ color: m.color }}
-                      >
-                        Explorar módulo <ChevronRight size={14} />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* ── DOCENTE BANNER ── */}
-      <section className="py-16">
-        <div className="container">
-          <div
-            className="rounded-2xl p-8 md:p-12 relative overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, rgba(0, 245, 212, 0.05) 0%, rgba(247, 37, 133, 0.05) 100%)",
-              border: "1px solid rgba(0, 245, 212, 0.1)",
-            }}
-          >
-            {/* Decorative glow */}
-            <div
-              className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10 blur-3xl"
-              style={{ background: "#00f5d4", transform: "translate(30%, -30%)" }}
-            />
-            <div
-              className="absolute bottom-0 left-0 w-48 h-48 rounded-full opacity-10 blur-3xl"
-              style={{ background: "#f72585", transform: "translate(-30%, 30%)" }}
-            />
-
-            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0"
-                style={{ background: "rgba(0, 245, 212, 0.1)", border: "1px solid rgba(0, 245, 212, 0.25)" }}
-              >
-                <span className="text-3xl">👩‍🏫</span>
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-medium uppercase tracking-widest mb-1" style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}>
-                  // docente a cargo
-                </p>
-                <h3 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                  Prof. Camila Tapia Cisternas
-                </h3>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Liceo Emblemático Libertador General Bernardo O'Higgins Riquelme · Física y Orientación
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Link href="/fisica">
-                  <button className="btn-neon-cyan px-5 py-2.5 rounded-lg text-sm">
-                    Física
-                  </button>
-                </Link>
-                <Link href="/orientacion">
-                  <button className="btn-neon-magenta px-5 py-2.5 rounded-lg text-sm">
-                    Orientación
-                  </button>
-                </Link>
-              </div>
             </div>
           </div>
         </div>

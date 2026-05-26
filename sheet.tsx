@@ -1,27 +1,40 @@
-"use client";
-
 import * as React from "react";
-import { Command as CommandPrimitive } from "cmdk";
-import { SearchIcon } from "lucide-react";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { buttonVariants } from "@/components/ui/button";
 
-function Command({
+function AlertDialog({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />;
+}
+
+function AlertDialogTrigger({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Trigger>) {
+  return (
+    <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
+  );
+}
+
+function AlertDialogPortal({
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Portal>) {
+  return (
+    <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
+  );
+}
+
+function AlertDialogOverlay({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
   return (
-    <CommandPrimitive
-      data-slot="command"
+    <AlertDialogPrimitive.Overlay
+      data-slot="alert-dialog-overlay"
       className={cn(
-        "bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-md",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
         className
       )}
       {...props}
@@ -29,68 +42,47 @@ function Command({
   );
 }
 
-function CommandDialog({
-  title = "Command Palette",
-  description = "Search for a command to run...",
-  children,
-  className,
-  showCloseButton = true,
-  ...props
-}: React.ComponentProps<typeof Dialog> & {
-  title?: string;
-  description?: string;
-  className?: string;
-  showCloseButton?: boolean;
-}) {
-  return (
-    <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
-      <DialogContent
-        className={cn("overflow-hidden p-0", className)}
-        showCloseButton={showCloseButton}
-      >
-        <Command className="[&_[cmdk-group-heading]]:text-muted-foreground **:data-[slot=command-input-wrapper]:h-12 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group]]:px-2 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
-          {children}
-        </Command>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function CommandInput({
+function AlertDialogContent({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
   return (
-    <div
-      data-slot="command-input-wrapper"
-      className="flex h-9 items-center gap-2 border-b px-3"
-    >
-      <SearchIcon className="size-4 shrink-0 opacity-50" />
-      <CommandPrimitive.Input
-        data-slot="command-input"
+    <AlertDialogPortal>
+      <AlertDialogOverlay />
+      <AlertDialogPrimitive.Content
+        data-slot="alert-dialog-content"
         className={cn(
-          "placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
           className
         )}
         {...props}
       />
-    </div>
+    </AlertDialogPortal>
   );
 }
 
-function CommandList({
+function AlertDialogHeader({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.List>) {
+}: React.ComponentProps<"div">) {
   return (
-    <CommandPrimitive.List
-      data-slot="command-list"
+    <div
+      data-slot="alert-dialog-header"
+      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      {...props}
+    />
+  );
+}
+
+function AlertDialogFooter({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-dialog-footer"
       className={cn(
-        "max-h-[300px] scroll-py-1 overflow-x-hidden overflow-y-auto",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -98,87 +90,66 @@ function CommandList({
   );
 }
 
-function CommandEmpty({
+function AlertDialogTitle({
+  className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Empty>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
   return (
-    <CommandPrimitive.Empty
-      data-slot="command-empty"
-      className="py-6 text-center text-sm"
+    <AlertDialogPrimitive.Title
+      data-slot="alert-dialog-title"
+      className={cn("text-lg font-semibold", className)}
       {...props}
     />
   );
 }
 
-function CommandGroup({
+function AlertDialogDescription({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Group>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
   return (
-    <CommandPrimitive.Group
-      data-slot="command-group"
-      className={cn(
-        "text-foreground [&_[cmdk-group-heading]]:text-muted-foreground overflow-hidden p-1 [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium",
-        className
-      )}
+    <AlertDialogPrimitive.Description
+      data-slot="alert-dialog-description"
+      className={cn("text-muted-foreground text-sm", className)}
       {...props}
     />
   );
 }
 
-function CommandSeparator({
+function AlertDialogAction({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Separator>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
   return (
-    <CommandPrimitive.Separator
-      data-slot="command-separator"
-      className={cn("bg-border -mx-1 h-px", className)}
+    <AlertDialogPrimitive.Action
+      className={cn(buttonVariants(), className)}
       {...props}
     />
   );
 }
 
-function CommandItem({
+function AlertDialogCancel({
   className,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Item>) {
+}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
-    <CommandPrimitive.Item
-      data-slot="command-item"
-      className={cn(
-        "data-[selected=true]:bg-accent data-[selected=true]:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
-function CommandShortcut({
-  className,
-  ...props
-}: React.ComponentProps<"span">) {
-  return (
-    <span
-      data-slot="command-shortcut"
-      className={cn(
-        "text-muted-foreground ml-auto text-xs tracking-widest",
-        className
-      )}
+    <AlertDialogPrimitive.Cancel
+      className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
   );
 }
 
 export {
-  Command,
-  CommandDialog,
-  CommandInput,
-  CommandList,
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandShortcut,
-  CommandSeparator,
+  AlertDialog,
+  AlertDialogPortal,
+  AlertDialogOverlay,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
 };

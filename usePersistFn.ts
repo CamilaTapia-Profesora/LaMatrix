@@ -1,16 +1,15 @@
 /* ============================================================
-   OpticsVisualizer — Óptica: Refracción y Reflexión
-   Visualización de rayos de luz en diferentes medios
+   MagneticFieldVisualizer — Campos Magnéticos
+   Visualización de líneas de fuerza magnética
    ============================================================ */
 import { useEffect, useRef, useCallback } from "react";
 
-interface OpticsVisualizerProps {
-  angle: number;
-  opticsType: "refraction" | "reflection";
-  refractiveIndex: number;
+interface MagneticFieldVisualizerProps {
+  magnetStrength: number;
+  fieldType: "dipole" | "solenoid";
 }
 
-export function OpticsVisualizer({ angle, opticsType, refractiveIndex }: OpticsVisualizerProps) {
+export function MagneticFieldVisualizer({ magnetStrength, fieldType }: MagneticFieldVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -27,137 +26,103 @@ export function OpticsVisualizer({ angle, opticsType, refractiveIndex }: OpticsV
     ctx.fillStyle = "#030b18";
     ctx.fillRect(0, 0, W, H);
 
-    const interfaceY = H / 2;
+    if (fieldType === "dipole") {
+      // Imán de barra (dipolo)
+      const magnetX = W / 2;
+      const magnetY = H / 2;
 
-    if (opticsType === "refraction") {
-      // Medio 1 (aire)
-      ctx.fillStyle = "rgba(0, 245, 212, 0.05)";
-      ctx.fillRect(0, 0, W, interfaceY);
-
-      // Medio 2 (agua/vidrio)
-      ctx.fillStyle = "rgba(67, 97, 238, 0.05)";
-      ctx.fillRect(0, interfaceY, W, H / 2);
-
-      // Interfaz
-      ctx.strokeStyle = "rgba(0, 245, 212, 0.3)";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, interfaceY);
-      ctx.lineTo(W, interfaceY);
-      ctx.stroke();
-
-      // Rayo incidente
-      const startX = W / 4;
-      const startY = 20;
-      const incidentAngle = (angle * Math.PI) / 180;
-      const incidentLength = 150;
-
-      ctx.strokeStyle = "#ffd60a";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(
-        startX + incidentLength * Math.sin(incidentAngle),
-        interfaceY - incidentLength * Math.cos(incidentAngle)
-      );
-      ctx.stroke();
-
-      // Normal
-      ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(startX, 0);
-      ctx.lineTo(startX, H);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      // Rayo refractado (Ley de Snell: n1*sin(θ1) = n2*sin(θ2))
-      const n1 = 1; // aire
-      const n2 = refractiveIndex;
-      const sinRefracted = (n1 * Math.sin(incidentAngle)) / n2;
-      const refractedAngle = Math.asin(Math.max(-1, Math.min(1, sinRefracted)));
-      const refractedLength = 150;
-
-      ctx.strokeStyle = "#00f5d4";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, interfaceY);
-      ctx.lineTo(
-        startX + refractedLength * Math.sin(refractedAngle),
-        interfaceY + refractedLength * Math.cos(refractedAngle)
-      );
-      ctx.stroke();
-
-      // Información
-      ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
-      ctx.textAlign = "left";
+      // Polo norte (azul)
+      ctx.fillStyle = "#4361ee";
+      ctx.fillRect(magnetX - 30, magnetY - 60, 60, 30);
+      ctx.fillStyle = "rgba(67, 97, 238, 0.7)";
       ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillText(`θ incidente: ${angle.toFixed(1)}°`, 10, 20);
-      ctx.fillText(`θ refractado: ${((refractedAngle * 180) / Math.PI).toFixed(1)}°`, 10, 40);
-      ctx.fillText(`n₂: ${refractiveIndex.toFixed(2)}`, 10, 60);
+      ctx.textAlign = "center";
+      ctx.fillText("N", magnetX, magnetY - 45);
+
+      // Polo sur (rojo)
+      ctx.fillStyle = "#f72585";
+      ctx.fillRect(magnetX - 30, magnetY + 30, 60, 30);
+      ctx.fillStyle = "rgba(247, 37, 133, 0.7)";
+      ctx.fillText("S", magnetX, magnetY + 45);
+
+      // Líneas de fuerza
+      const lineCount = Math.ceil(magnetStrength * 2);
+      for (let i = 0; i < lineCount; i++) {
+        const angle = (i / lineCount) * Math.PI;
+        const startX = magnetX + Math.cos(angle) * 40;
+        const startY = magnetY - 60;
+
+        ctx.strokeStyle = `rgba(0, 245, 212, ${0.3 + (i / lineCount) * 0.4})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+
+        // Curva de línea de fuerza
+        for (let t = 0; t <= 1; t += 0.05) {
+          const x = startX + Math.sin(angle * t) * 80;
+          const y = startY + t * (H - 60);
+          if (t === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Líneas simétricas
+        ctx.beginPath();
+        ctx.moveTo(magnetX - (startX - magnetX), startY);
+        for (let t = 0; t <= 1; t += 0.05) {
+          const x = magnetX - (startX - magnetX) - Math.sin(angle * t) * 80;
+          const y = startY + t * (H - 60);
+          if (t === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
     } else {
-      // Reflexión
-      ctx.fillStyle = "rgba(247, 37, 133, 0.05)";
-      ctx.fillRect(0, interfaceY - 5, W, 10);
+      // Solenoide (bobina)
+      const coilX = W / 2;
+      const coilRadius = 40;
+      const coilWidth = 80;
 
-      // Espejo
+      // Dibujar bobina
       ctx.strokeStyle = "#f72585";
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(0, interfaceY);
-      ctx.lineTo(W, interfaceY);
-      ctx.stroke();
-
-      // Rayo incidente
-      const startX = W / 4;
-      const startY = 20;
-      const incidentAngle = (angle * Math.PI) / 180;
-      const incidentLength = 150;
-
-      ctx.strokeStyle = "#ffd60a";
       ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, startY);
-      ctx.lineTo(
-        startX + incidentLength * Math.sin(incidentAngle),
-        interfaceY - incidentLength * Math.cos(incidentAngle)
-      );
-      ctx.stroke();
+      for (let i = 0; i < 5; i++) {
+        const y = H / 2 - 80 + i * 40;
+        ctx.beginPath();
+        ctx.arc(coilX, y, coilRadius, 0, Math.PI * 2);
+        ctx.stroke();
+      }
 
-      // Normal
-      ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([2, 2]);
-      ctx.beginPath();
-      ctx.moveTo(startX, 0);
-      ctx.lineTo(startX, H);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Líneas de fuerza dentro del solenoide
+      const fieldStrength = magnetStrength * 3;
+      for (let i = 0; i < fieldStrength; i++) {
+        const x = coilX - coilWidth / 2 + (i / fieldStrength) * coilWidth;
+        ctx.strokeStyle = `rgba(0, 245, 212, ${0.4 + (i / fieldStrength) * 0.4})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, H / 2 - 100);
+        ctx.lineTo(x, H / 2 + 100);
+        ctx.stroke();
+      }
 
-      // Rayo reflejado (Ángulo de incidencia = Ángulo de reflexión)
-      const reflectedLength = 150;
-      ctx.strokeStyle = "#00f5d4";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(startX, interfaceY);
-      ctx.lineTo(
-        startX + reflectedLength * Math.sin(incidentAngle),
-        interfaceY + reflectedLength * Math.cos(incidentAngle)
-      );
-      ctx.stroke();
-
-      // Información
-      ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
-      ctx.textAlign = "left";
+      // Polos
+      ctx.fillStyle = "#4361ee";
       ctx.font = "12px 'JetBrains Mono', monospace";
-      ctx.fillText(`θ incidente: ${angle.toFixed(1)}°`, 10, 20);
-      ctx.fillText(`θ reflejado: ${angle.toFixed(1)}°`, 10, 40);
-      ctx.fillText("Ley: θᵢ = θᵣ", 10, 60);
+      ctx.textAlign = "center";
+      ctx.fillText("N", coilX - coilWidth / 2 - 30, H / 2);
+      ctx.fillStyle = "#f72585";
+      ctx.fillText("S", coilX + coilWidth / 2 + 30, H / 2);
     }
 
+    // Información
+    ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
+    ctx.textAlign = "left";
+    ctx.font = "12px 'JetBrains Mono', monospace";
+    ctx.fillText(`Campo: ${magnetStrength.toFixed(1)} T`, 10, 20);
+    ctx.fillText(`Tipo: ${fieldType === "dipole" ? "Imán de barra" : "Solenoide"}`, 10, 40);
+
     animRef.current = requestAnimationFrame(draw);
-  }, [angle, opticsType, refractiveIndex]);
+  }, [magnetStrength, fieldType]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

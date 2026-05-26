@@ -1,225 +1,150 @@
 /* ============================================================
-   SpectrumAnalyzer — FFT Spectrum Visualizer
-   Análisis en tiempo real de armónicos y distribución de frecuencias
+   NavBar — Cyberpunk Académico
+   Sticky top nav con detección de sub-rutas activas
    ============================================================ */
-import { useEffect, useRef, useCallback } from "react";
-import { getMusicalNotesInRange, formatNote } from "@/lib/musicNotes";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
+import { Menu, X, Zap } from "lucide-react";
 
-interface SpectrumAnalyzerProps {
-  audioContext: AudioContext | null;
-  gainNode: GainNode | null;
-  isPlaying: boolean;
-  externalAnalyser?: AnalyserNode | null;
-  showNoteLabels?: boolean;
-}
+const navLinks = [
+  { href: "/", label: "Inicio" },
+  { href: "/fisica", label: "Física" },
+  { href: "/orientacion", label: "Orientación" },
+];
 
-export function SpectrumAnalyzer({ audioContext, gainNode, isPlaying, externalAnalyser, showNoteLabels = true }: SpectrumAnalyzerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const analyserRef = useRef<AnalyserNode | null>(externalAnalyser || null);
-  const animRef = useRef<number>(0);
-  const dataArrayRef = useRef<Uint8Array | null>(null);
-
-  const setupAnalyser = useCallback(() => {
-    // Si hay un analizador externo (micrófono), usarlo directamente
-    if (externalAnalyser) {
-      const bufferLength = externalAnalyser.frequencyBinCount;
-      const dataArray = new Uint8Array(bufferLength);
-      analyserRef.current = externalAnalyser;
-      dataArrayRef.current = dataArray;
-      return;
-    }
-
-    if (!audioContext || !gainNode) return;
-
-    if (analyserRef.current) return; // Ya está configurado
-
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
-    analyser.smoothingTimeConstant = 0.85;
-    gainNode.connect(analyser);
-    analyser.connect(audioContext.destination);
-
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    analyserRef.current = analyser;
-    dataArrayRef.current = dataArray;
-  }, [audioContext, gainNode, externalAnalyser]);
-
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || !analyserRef.current || !dataArrayRef.current) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Fondo
-    ctx.fillStyle = "#030b18";
-    ctx.fillRect(0, 0, W, H);
-
-    // Grid horizontal (líneas de referencia de dB)
-    ctx.strokeStyle = "rgba(0, 245, 212, 0.06)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 5; i++) {
-      const y = (H / 5) * i;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(W, y);
-      ctx.stroke();
-    }
-
-    // Grid vertical (bandas de frecuencia)
-    ctx.strokeStyle = "rgba(0, 245, 212, 0.04)";
-    for (let i = 0; i <= 8; i++) {
-      const x = (W / 8) * i;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, H);
-      ctx.stroke();
-    }
-
-    // Obtener datos del analizador
-    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-
-    const barWidth = W / dataArrayRef.current.length;
-    let x = 0;
-
-    // Dibujar barras de espectro con gradiente
-    for (let i = 0; i < dataArrayRef.current.length; i++) {
-      const value = dataArrayRef.current[i];
-      const percent = value / 255;
-      const hue = (i / dataArrayRef.current.length) * 360;
-
-      // Gradiente de color basado en frecuencia
-      let color: string;
-      if (percent < 0.2) {
-        color = `rgba(0, 245, 212, ${percent * 0.3})`;
-      } else if (percent < 0.5) {
-        color = `rgba(67, 97, 238, ${percent * 0.6})`;
-      } else if (percent < 0.8) {
-        color = `rgba(247, 37, 133, ${percent * 0.8})`;
-      } else {
-        color = `rgba(255, 214, 10, ${percent})`;
-      }
-
-      ctx.fillStyle = color;
-      const barHeight = (percent * H) * 0.95;
-      ctx.fillRect(x, H - barHeight, barWidth - 1, barHeight);
-
-      // Glow en picos
-      if (percent > 0.7) {
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = color;
-        ctx.fillStyle = `rgba(255, 255, 255, ${(percent - 0.7) * 0.3})`;
-        ctx.fillRect(x, H - barHeight - 2, barWidth - 1, 2);
-        ctx.shadowBlur = 0;
-      }
-
-      x += barWidth;
-    }
-
-    // Línea de base
-    ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, H);
-    ctx.lineTo(W, H);
-    ctx.stroke();
-
-    // Etiquetas de notas musicales
-    if (showNoteLabels) {
-      const analyser = analyserRef.current;
-      const nyquist = (analyser.context.sampleRate || 44100) / 2; // Frecuencia de Nyquist
-      const minFreq = 20; // Hz
-      const maxFreq = Math.min(nyquist, 20000); // Rango audible
-
-      const notes = getMusicalNotesInRange(minFreq, maxFreq, 10);
-
-      ctx.font = "11px 'JetBrains Mono', monospace";
-      ctx.fillStyle = "rgba(0, 245, 212, 0.6)";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-
-      for (const note of notes) {
-        // Mapear frecuencia a posición X en el canvas
-        const freqPercent = (Math.log2(note.frequency) - Math.log2(minFreq)) / 
-                           (Math.log2(maxFreq) - Math.log2(minFreq));
-        const xPos = freqPercent * W;
-
-        // Dibujar línea vertical punteada
-        ctx.strokeStyle = "rgba(0, 245, 212, 0.15)";
-        ctx.lineWidth = 1;
-        ctx.setLineDash([2, 2]);
-        ctx.beginPath();
-        ctx.moveTo(xPos, 0);
-        ctx.lineTo(xPos, H - 20);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Dibujar etiqueta de nota
-        const label = formatNote(note);
-        ctx.fillText(label, xPos, H - 16);
-      }
-    }
-
-    animRef.current = requestAnimationFrame(draw);
-  }, [showNoteLabels]);
+export default function NavBar() {
+  const [location] = useLocation();
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    if (isPlaying || externalAnalyser) {
-      setupAnalyser();
-    }
-  }, [isPlaying, externalAnalyser, setupAnalyser]);
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
+  // Cierra el menú móvil al cambiar de ruta
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    setOpen(false);
+  }, [location]);
 
-    const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
-    };
-
-    resize();
-    const observer = new ResizeObserver(resize);
-    observer.observe(canvas);
-
-    if (isPlaying || externalAnalyser) {
-      animRef.current = requestAnimationFrame(draw);
-    }
-
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      observer.disconnect();
-    };
-  }, [isPlaying, externalAnalyser, draw]);
+  // Marca activo si la ruta exacta coincide, o si es sub-ruta (excepto "/")
+  const isActive = (href: string) => {
+    if (href === "/") return location === "/";
+    return location === href || location.startsWith(href + "/");
+  };
 
   return (
-    <div className="w-full">
-      <canvas
-        ref={canvasRef}
-        className="w-full rounded-lg"
-        style={{
-          height: "200px",
-          background: "#030b18",
-          border: "1px solid rgba(0, 245, 212, 0.15)",
-          display: "block",
-        }}
-      />
-      <div className="flex justify-between items-center mt-2 px-1">
-        <span className="text-xs" style={{ color: "rgba(0, 245, 212, 0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
-          Bajos
-        </span>
-        <span className="text-xs" style={{ color: "rgba(0, 245, 212, 0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
-          Espectro de Frecuencias (FFT)
-        </span>
-        <span className="text-xs" style={{ color: "rgba(0, 245, 212, 0.4)", fontFamily: "'JetBrains Mono', monospace" }}>
-          Agudos
-        </span>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: scrolled
+          ? "rgba(5, 9, 20, 0.95)"
+          : "rgba(5, 9, 20, 0.7)",
+        backdropFilter: "blur(16px)",
+        borderBottom: scrolled
+          ? "1px solid rgba(0, 245, 212, 0.15)"
+          : "1px solid transparent",
+        boxShadow: scrolled ? "0 4px 30px rgba(0, 0, 0, 0.5)" : "none",
+      }}
+    >
+      <div className="container">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo */}
+          <Link href="/">
+            <div className="flex items-center gap-2 group">
+              <div
+                className="w-8 h-8 rounded flex items-center justify-center"
+                style={{
+                  background: "rgba(0, 245, 212, 0.1)",
+                  border: "1px solid rgba(0, 245, 212, 0.4)",
+                }}
+              >
+                <Zap size={16} style={{ color: "#00f5d4" }} />
+              </div>
+              <div>
+                <span
+                  className="font-bold text-lg leading-none block"
+                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#00f5d4" }}
+                >
+                  La Matriz
+                </span>
+                <span
+                  className="text-xs leading-none block"
+                  style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}
+                >
+                  Liceo O'Higgins
+                </span>
+              </div>
+            </div>
+          </Link>
+
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-1">
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link key={link.href} href={link.href}>
+                  <span
+                    className="px-4 py-2 rounded text-sm font-medium transition-all duration-200"
+                    style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      color: active ? "#00f5d4" : "rgba(255,255,255,0.7)",
+                      background: active ? "rgba(0, 245, 212, 0.08)" : "transparent",
+                      border: active ? "1px solid rgba(0, 245, 212, 0.2)" : "1px solid transparent",
+                      textShadow: active ? "0 0 12px rgba(0, 245, 212, 0.5)" : "none",
+                    }}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded"
+            style={{ color: "#00f5d4" }}
+            onClick={() => setOpen(!open)}
+            aria-label="Menú"
+            aria-expanded={open}
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+          </button>
+        </div>
       </div>
-    </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div
+          className="md:hidden border-t"
+          style={{
+            background: "rgba(5, 9, 20, 0.98)",
+            borderColor: "rgba(0, 245, 212, 0.1)",
+          }}
+        >
+          <div className="container py-3 flex flex-col gap-1">
+            {navLinks.map((link) => {
+              const active = isActive(link.href);
+              return (
+                <Link key={link.href} href={link.href}>
+                  <span
+                    className="block px-4 py-3 rounded text-sm font-medium"
+                    style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      color: active ? "#00f5d4" : "rgba(255,255,255,0.7)",
+                      background: active ? "rgba(0, 245, 212, 0.08)" : "transparent",
+                    }}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </header>
   );
 }

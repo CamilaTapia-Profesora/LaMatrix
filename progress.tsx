@@ -1,16 +1,9 @@
-import { Loader2Icon } from "lucide-react";
+import * as AspectRatioPrimitive from "@radix-ui/react-aspect-ratio";
 
-import { cn } from "@/lib/utils";
-
-function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
-  return (
-    <Loader2Icon
-      role="status"
-      aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
-      {...props}
-    />
-  );
+function AspectRatio({
+  ...props
+}: React.ComponentProps<typeof AspectRatioPrimitive.Root>) {
+  return <AspectRatioPrimitive.Root data-slot="aspect-ratio" {...props} />;
 }
 
-export { Spinner };
+export { AspectRatio };

@@ -1,150 +1,195 @@
 /* ============================================================
-   NavBar — Cyberpunk Académico
-   Sticky top nav con detección de sub-rutas activas
+   OpticsVisualizer — Óptica: Refracción y Reflexión
+   Visualización de rayos de luz en diferentes medios
    ============================================================ */
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "wouter";
-import { Menu, X, Zap } from "lucide-react";
+import { useEffect, useRef, useCallback } from "react";
 
-const navLinks = [
-  { href: "/", label: "Inicio" },
-  { href: "/fisica", label: "Física" },
-  { href: "/orientacion", label: "Orientación" },
-];
+interface OpticsVisualizerProps {
+  angle: number;
+  opticsType: "refraction" | "reflection";
+  refractiveIndex: number;
+}
 
-export default function NavBar() {
-  const [location] = useLocation();
-  const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+export function OpticsVisualizer({ angle, opticsType, refractiveIndex }: OpticsVisualizerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Fondo
+    ctx.fillStyle = "#030b18";
+    ctx.fillRect(0, 0, W, H);
+
+    const interfaceY = H / 2;
+
+    if (opticsType === "refraction") {
+      // Medio 1 (aire)
+      ctx.fillStyle = "rgba(0, 245, 212, 0.05)";
+      ctx.fillRect(0, 0, W, interfaceY);
+
+      // Medio 2 (agua/vidrio)
+      ctx.fillStyle = "rgba(67, 97, 238, 0.05)";
+      ctx.fillRect(0, interfaceY, W, H / 2);
+
+      // Interfaz
+      ctx.strokeStyle = "rgba(0, 245, 212, 0.3)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, interfaceY);
+      ctx.lineTo(W, interfaceY);
+      ctx.stroke();
+
+      // Rayo incidente
+      const startX = W / 4;
+      const startY = 20;
+      const incidentAngle = (angle * Math.PI) / 180;
+      const incidentLength = 150;
+
+      ctx.strokeStyle = "#ffd60a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(
+        startX + incidentLength * Math.sin(incidentAngle),
+        interfaceY - incidentLength * Math.cos(incidentAngle)
+      );
+      ctx.stroke();
+
+      // Normal
+      ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(startX, 0);
+      ctx.lineTo(startX, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Rayo refractado (Ley de Snell: n1*sin(θ1) = n2*sin(θ2))
+      const n1 = 1; // aire
+      const n2 = refractiveIndex;
+      const sinRefracted = (n1 * Math.sin(incidentAngle)) / n2;
+      const refractedAngle = Math.asin(Math.max(-1, Math.min(1, sinRefracted)));
+      const refractedLength = 150;
+
+      ctx.strokeStyle = "#00f5d4";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, interfaceY);
+      ctx.lineTo(
+        startX + refractedLength * Math.sin(refractedAngle),
+        interfaceY + refractedLength * Math.cos(refractedAngle)
+      );
+      ctx.stroke();
+
+      // Información
+      ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
+      ctx.textAlign = "left";
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillText(`θ incidente: ${angle.toFixed(1)}°`, 10, 20);
+      ctx.fillText(`θ refractado: ${((refractedAngle * 180) / Math.PI).toFixed(1)}°`, 10, 40);
+      ctx.fillText(`n₂: ${refractiveIndex.toFixed(2)}`, 10, 60);
+    } else {
+      // Reflexión
+      ctx.fillStyle = "rgba(247, 37, 133, 0.05)";
+      ctx.fillRect(0, interfaceY - 5, W, 10);
+
+      // Espejo
+      ctx.strokeStyle = "#f72585";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, interfaceY);
+      ctx.lineTo(W, interfaceY);
+      ctx.stroke();
+
+      // Rayo incidente
+      const startX = W / 4;
+      const startY = 20;
+      const incidentAngle = (angle * Math.PI) / 180;
+      const incidentLength = 150;
+
+      ctx.strokeStyle = "#ffd60a";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(
+        startX + incidentLength * Math.sin(incidentAngle),
+        interfaceY - incidentLength * Math.cos(incidentAngle)
+      );
+      ctx.stroke();
+
+      // Normal
+      ctx.strokeStyle = "rgba(0, 245, 212, 0.2)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(startX, 0);
+      ctx.lineTo(startX, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Rayo reflejado (Ángulo de incidencia = Ángulo de reflexión)
+      const reflectedLength = 150;
+      ctx.strokeStyle = "#00f5d4";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(startX, interfaceY);
+      ctx.lineTo(
+        startX + reflectedLength * Math.sin(incidentAngle),
+        interfaceY + reflectedLength * Math.cos(incidentAngle)
+      );
+      ctx.stroke();
+
+      // Información
+      ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
+      ctx.textAlign = "left";
+      ctx.font = "12px 'JetBrains Mono', monospace";
+      ctx.fillText(`θ incidente: ${angle.toFixed(1)}°`, 10, 20);
+      ctx.fillText(`θ reflejado: ${angle.toFixed(1)}°`, 10, 40);
+      ctx.fillText("Ley: θᵢ = θᵣ", 10, 60);
+    }
+
+    animRef.current = requestAnimationFrame(draw);
+  }, [angle, opticsType, refractiveIndex]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  // Cierra el menú móvil al cambiar de ruta
-  useEffect(() => {
-    setOpen(false);
-  }, [location]);
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
 
-  // Marca activo si la ruta exacta coincide, o si es sub-ruta (excepto "/")
-  const isActive = (href: string) => {
-    if (href === "/") return location === "/";
-    return location === href || location.startsWith(href + "/");
-  };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+
+    animRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      observer.disconnect();
+    };
+  }, [draw]);
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+    <canvas
+      ref={canvasRef}
+      className="w-full rounded-lg"
       style={{
-        background: scrolled
-          ? "rgba(5, 9, 20, 0.95)"
-          : "rgba(5, 9, 20, 0.7)",
-        backdropFilter: "blur(16px)",
-        borderBottom: scrolled
-          ? "1px solid rgba(0, 245, 212, 0.15)"
-          : "1px solid transparent",
-        boxShadow: scrolled ? "0 4px 30px rgba(0, 0, 0, 0.5)" : "none",
+        height: "200px",
+        background: "#030b18",
+        border: "1px solid rgba(0, 245, 212, 0.15)",
+        display: "block",
       }}
-    >
-      <div className="container">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/">
-            <div className="flex items-center gap-2 group">
-              <div
-                className="w-8 h-8 rounded flex items-center justify-center"
-                style={{
-                  background: "rgba(0, 245, 212, 0.1)",
-                  border: "1px solid rgba(0, 245, 212, 0.4)",
-                }}
-              >
-                <Zap size={16} style={{ color: "#00f5d4" }} />
-              </div>
-              <div>
-                <span
-                  className="font-bold text-lg leading-none block"
-                  style={{ fontFamily: "'Space Grotesk', sans-serif", color: "#00f5d4" }}
-                >
-                  La Matriz
-                </span>
-                <span
-                  className="text-xs leading-none block"
-                  style={{ color: "rgba(0, 245, 212, 0.5)", fontFamily: "'JetBrains Mono', monospace" }}
-                >
-                  Liceo O'Higgins
-                </span>
-              </div>
-            </div>
-          </Link>
-
-          {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const active = isActive(link.href);
-              return (
-                <Link key={link.href} href={link.href}>
-                  <span
-                    className="px-4 py-2 rounded text-sm font-medium transition-all duration-200"
-                    style={{
-                      fontFamily: "'Space Grotesk', sans-serif",
-                      color: active ? "#00f5d4" : "rgba(255,255,255,0.7)",
-                      background: active ? "rgba(0, 245, 212, 0.08)" : "transparent",
-                      border: active ? "1px solid rgba(0, 245, 212, 0.2)" : "1px solid transparent",
-                      textShadow: active ? "0 0 12px rgba(0, 245, 212, 0.5)" : "none",
-                    }}
-                  >
-                    {link.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Mobile hamburger */}
-          <button
-            className="md:hidden p-2 rounded"
-            style={{ color: "#00f5d4" }}
-            onClick={() => setOpen(!open)}
-            aria-label="Menú"
-            aria-expanded={open}
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile menu */}
-      {open && (
-        <div
-          className="md:hidden border-t"
-          style={{
-            background: "rgba(5, 9, 20, 0.98)",
-            borderColor: "rgba(0, 245, 212, 0.1)",
-          }}
-        >
-          <div className="container py-3 flex flex-col gap-1">
-            {navLinks.map((link) => {
-              const active = isActive(link.href);
-              return (
-                <Link key={link.href} href={link.href}>
-                  <span
-                    className="block px-4 py-3 rounded text-sm font-medium"
-                    style={{
-                      fontFamily: "'Space Grotesk', sans-serif",
-                      color: active ? "#00f5d4" : "rgba(255,255,255,0.7)",
-                      background: active ? "rgba(0, 245, 212, 0.08)" : "transparent",
-                    }}
-                  >
-                    {link.label}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </header>
+    />
   );
 }

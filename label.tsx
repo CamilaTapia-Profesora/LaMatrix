@@ -1,73 +1,31 @@
-"use client";
+import * as CollapsiblePrimitive from "@radix-ui/react-collapsible";
 
-import * as React from "react";
-import * as ToggleGroupPrimitive from "@radix-ui/react-toggle-group";
-import { type VariantProps } from "class-variance-authority";
-
-import { cn } from "@/lib/utils";
-import { toggleVariants } from "@/components/ui/toggle";
-
-const ToggleGroupContext = React.createContext<
-  VariantProps<typeof toggleVariants>
->({
-  size: "default",
-  variant: "default",
-});
-
-function ToggleGroup({
-  className,
-  variant,
-  size,
-  children,
+function Collapsible({
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Root> &
-  VariantProps<typeof toggleVariants>) {
+}: React.ComponentProps<typeof CollapsiblePrimitive.Root>) {
+  return <CollapsiblePrimitive.Root data-slot="collapsible" {...props} />;
+}
+
+function CollapsibleTrigger({
+  ...props
+}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleTrigger>) {
   return (
-    <ToggleGroupPrimitive.Root
-      data-slot="toggle-group"
-      data-variant={variant}
-      data-size={size}
-      className={cn(
-        "group/toggle-group flex w-fit items-center rounded-md data-[variant=outline]:shadow-xs",
-        className
-      )}
+    <CollapsiblePrimitive.CollapsibleTrigger
+      data-slot="collapsible-trigger"
       {...props}
-    >
-      <ToggleGroupContext.Provider value={{ variant, size }}>
-        {children}
-      </ToggleGroupContext.Provider>
-    </ToggleGroupPrimitive.Root>
+    />
   );
 }
 
-function ToggleGroupItem({
-  className,
-  children,
-  variant,
-  size,
+function CollapsibleContent({
   ...props
-}: React.ComponentProps<typeof ToggleGroupPrimitive.Item> &
-  VariantProps<typeof toggleVariants>) {
-  const context = React.useContext(ToggleGroupContext);
-
+}: React.ComponentProps<typeof CollapsiblePrimitive.CollapsibleContent>) {
   return (
-    <ToggleGroupPrimitive.Item
-      data-slot="toggle-group-item"
-      data-variant={context.variant || variant}
-      data-size={context.size || size}
-      className={cn(
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
-        "min-w-0 flex-1 shrink-0 rounded-none shadow-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l",
-        className
-      )}
+    <CollapsiblePrimitive.CollapsibleContent
+      data-slot="collapsible-content"
       {...props}
-    >
-      {children}
-    </ToggleGroupPrimitive.Item>
+    />
   );
 }
 
-export { ToggleGroup, ToggleGroupItem };
+export { Collapsible, CollapsibleTrigger, CollapsibleContent };

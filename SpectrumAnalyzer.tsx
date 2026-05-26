@@ -1,85 +1,166 @@
-import { useEffect, useState } from "react";
+/* ============================================================
+   EnergyVisualizer — Energía Cinética y Potencial
+   Visualización de transformación de energía
+   ============================================================ */
+import { useEffect, useRef, useCallback } from "react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-interface ManusDialogProps {
-  title?: string;
-  logo?: string;
-  open?: boolean;
-  onLogin: () => void;
-  onOpenChange?: (open: boolean) => void;
-  onClose?: () => void;
+interface EnergyVisualizerProps {
+  height: number;
+  mass: number;
+  isDropping: boolean;
 }
 
-export function ManusDialog({
-  title,
-  logo,
-  open = false,
-  onLogin,
-  onOpenChange,
-  onClose,
-}: ManusDialogProps) {
-  const [internalOpen, setInternalOpen] = useState(open);
+export function EnergyVisualizer({ height, mass, isDropping }: EnergyVisualizerProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const timeRef = useRef(0);
+  const positionRef = useRef(0);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const W = canvas.width;
+    const H = canvas.height;
+    const g = 9.8; // Gravedad
+
+    // Fondo
+    ctx.fillStyle = "#030b18";
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = "rgba(0, 245, 212, 0.06)";
+    ctx.lineWidth = 1;
+    for (let y = 0; y <= H; y += H / 5) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    if (isDropping) {
+      timeRef.current += 0.016;
+      // y = h - 0.5*g*t²
+      positionRef.current = Math.max(0, height - 0.5 * g * timeRef.current * timeRef.current);
+
+      if (positionRef.current <= 0) {
+        timeRef.current = 0;
+        positionRef.current = height;
+      }
+    } else {
+      timeRef.current = 0;
+      positionRef.current = height;
+    }
+
+    // Escala: mapear altura a píxeles
+    const maxHeight = 100; // metros
+    const pixelHeight = (positionRef.current / maxHeight) * (H - 40);
+    const ballY = H - 20 - pixelHeight;
+
+    // Energía potencial: Ep = m*g*h
+    const Ep = mass * g * positionRef.current;
+    // Energía cinética: Ek = 0.5*m*v²
+    const velocity = g * timeRef.current;
+    const Ek = 0.5 * mass * velocity * velocity;
+    // Energía total
+    const Et = Ep + Ek;
+    const maxEnergy = mass * g * height;
+
+    // Barras de energía
+    const barWidth = 60;
+    const barHeight = 120;
+    const epPercent = Et > 0 ? (Ep / maxEnergy) * 100 : 0;
+    const ekPercent = Et > 0 ? (Ek / maxEnergy) * 100 : 0;
+
+    // Barra de energía potencial (cian)
+    ctx.fillStyle = "rgba(0, 245, 212, 0.2)";
+    ctx.fillRect(W / 2 - 100, H - 30 - barHeight, barWidth, barHeight);
+    ctx.fillStyle = "#00f5d4";
+    ctx.fillRect(W / 2 - 100, H - 30 - (barHeight * epPercent) / 100, barWidth, (barHeight * epPercent) / 100);
+    ctx.fillStyle = "rgba(0, 245, 212, 0.6)";
+    ctx.font = "11px 'JetBrains Mono', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("Ep", W / 2 - 70, H - 5);
+
+    // Barra de energía cinética (magenta)
+    ctx.fillStyle = "rgba(247, 37, 133, 0.2)";
+    ctx.fillRect(W / 2 - 20, H - 30 - barHeight, barWidth, barHeight);
+    ctx.fillStyle = "#f72585";
+    ctx.fillRect(W / 2 - 20, H - 30 - (barHeight * ekPercent) / 100, barWidth, (barHeight * ekPercent) / 100);
+    ctx.fillStyle = "rgba(247, 37, 133, 0.6)";
+    ctx.fillText("Ek", W / 2 + 10, H - 5);
+
+    // Barra de energía total (amarillo)
+    ctx.fillStyle = "rgba(255, 214, 10, 0.2)";
+    ctx.fillRect(W / 2 + 60, H - 30 - barHeight, barWidth, barHeight);
+    ctx.fillStyle = "#ffd60a";
+    ctx.fillRect(W / 2 + 60, H - 30 - barHeight, barWidth, barHeight);
+    ctx.fillStyle = "rgba(255, 214, 10, 0.6)";
+    ctx.fillText("Et", W / 2 + 90, H - 5);
+
+    // Objeto cayendo
+    ctx.fillStyle = "#00f5d4";
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#00f5d4";
+    ctx.beginPath();
+    ctx.arc(W / 4, ballY, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Línea de altura
+    ctx.strokeStyle = "rgba(0, 245, 212, 0.3)";
+    ctx.lineWidth = 1;
+    ctx.setLineDash([2, 2]);
+    ctx.beginPath();
+    ctx.moveTo(W / 4 - 30, ballY);
+    ctx.lineTo(W / 4 + 30, ballY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Info
+    ctx.fillStyle = "rgba(0, 245, 212, 0.7)";
+    ctx.textAlign = "left";
+    ctx.fillText(`h: ${positionRef.current.toFixed(1)} m`, 10, 20);
+    ctx.fillText(`v: ${velocity.toFixed(1)} m/s`, 10, 40);
+    ctx.fillText(`Ep: ${Ep.toFixed(0)} J`, 10, 60);
+    ctx.fillText(`Ek: ${Ek.toFixed(0)} J`, 10, 80);
+
+    animRef.current = requestAnimationFrame(draw);
+  }, [height, mass, isDropping]);
 
   useEffect(() => {
-    if (!onOpenChange) {
-      setInternalOpen(open);
-    }
-  }, [open, onOpenChange]);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (onOpenChange) {
-      onOpenChange(nextOpen);
-    } else {
-      setInternalOpen(nextOpen);
-    }
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
 
-    if (!nextOpen) {
-      onClose?.();
-    }
-  };
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(canvas);
+
+    animRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      observer.disconnect();
+    };
+  }, [draw]);
 
   return (
-    <Dialog
-      open={onOpenChange ? open : internalOpen}
-      onOpenChange={handleOpenChange}
-    >
-      <DialogContent className="py-5 bg-[#f8f8f7] rounded-[20px] w-[400px] shadow-[0px_4px_11px_0px_rgba(0,0,0,0.08)] border border-[rgba(0,0,0,0.08)] backdrop-blur-2xl p-0 gap-0 text-center">
-        <div className="flex flex-col items-center gap-2 p-5 pt-12">
-          {logo ? (
-            <div className="w-16 h-16 bg-white rounded-xl border border-[rgba(0,0,0,0.08)] flex items-center justify-center">
-              <img src={logo} alt="Dialog graphic" className="w-10 h-10 rounded-md" />
-            </div>
-          ) : null}
-
-          {/* Title and subtitle */}
-          {title ? (
-            <DialogTitle className="text-xl font-semibold text-[#34322d] leading-[26px] tracking-[-0.44px]">
-              {title}
-            </DialogTitle>
-          ) : null}
-          <DialogDescription className="text-sm text-[#858481] leading-5 tracking-[-0.154px]">
-            Please login with Manus to continue
-          </DialogDescription>
-        </div>
-
-        <DialogFooter className="px-5 py-5">
-          {/* Login button */}
-          <Button
-            onClick={onLogin}
-            className="w-full h-10 bg-[#1a1a19] hover:bg-[#1a1a19]/90 text-white rounded-[10px] text-sm font-medium leading-5 tracking-[-0.154px]"
-          >
-            Login with Manus
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+    <canvas
+      ref={canvasRef}
+      className="w-full rounded-lg"
+      style={{
+        height: "200px",
+        background: "#030b18",
+        border: "1px solid rgba(0, 245, 212, 0.15)",
+        display: "block",
+      }}
+    />
   );
 }
